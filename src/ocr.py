@@ -13,6 +13,6 @@ image_path = PROJECT_ROOT / "images" / "image1.jpg"
 
 result = model.predict(str(image_path))
 
-res = result[0]
-for text in res["rec_texts"]:
+res = result[0]  # acces first element 'res'
+for text in res["rec_texts"]:  # res is a dictionary, acces element by key
     print(text)
