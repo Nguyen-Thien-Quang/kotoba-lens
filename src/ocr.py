@@ -9,9 +9,10 @@ model = PaddleOCR(
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-image_path = PROJECT_ROOT / "images" / "Darwins_Game_v12" / "12_058.jpg"
+image_path = PROJECT_ROOT / "images" / "image1.jpg"
 
 result = model.predict(str(image_path))
 
-for res in result:
-    res.print()
+res = result[0]
+for text in res["rec_texts"]:
+    print(text)
