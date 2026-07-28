@@ -15,9 +15,21 @@ class OCRResult:
     score: float
     box: np.ndarray
 
+    def get_x_min(self) -> int:
+        return self.box[0]
+
+    def get_x_max(self) -> int:
+        return self.box[2]
+
+    def get_y_min(self) -> int:
+        return self.box[1]
+
+    def get_y_max(self) -> int:
+        return self.box[3]
+
 
 # call model inference and return list of OCRResult object
-def extract_text(image_path, model) -> list[OCRResult]:
+def extract_text(image_path: str, model: PaddleOCR) -> list[OCRResult]:
     result = model.predict(str(image_path))
     data = result[0]  # get the raw_data in 'res' key
     # format raw_result into text boxes object
@@ -31,10 +43,10 @@ def extract_text(image_path, model) -> list[OCRResult]:
 
 
 # clean raw ouput from ocr model into list of meaningful, complete text lines
-def clean_text(data) -> list[str]:
+def clean_text(data: list[OCRResult]) -> list[str]:
     # data is list of OCRResult object
     # sort the list of text in order of right to left
-    data.sort(key=lambda r: r.box[2], reverse=True)
+    data.sort(key=lambda r: r.get_x_max(), reverse=True)
 
     # remove furigana
     data = remove_furigana(data)
@@ -42,7 +54,7 @@ def clean_text(data) -> list[str]:
     # calculate average text height
     avg_text_h = 0
     for result in data:
-        avg_text_h += result.box[2] - result.box[0]
+        avg_text_h += result.get_x_max() - result.get_x_min()
 
     avg_text_h = avg_text_h / len(data)
 
@@ -59,14 +71,17 @@ def clean_text(data) -> list[str]:
 
         found_flag = False
         for j in range(i - 1, -1, -1):  # compare with all text box before
-            horizontal_dis = max(0, data[j].box[0] - data[i].box[2])
+            horizontal_dis = max(0, data[j].get_x_min() - data[i].get_x_max())
 
             # stop if meet text box that is already too far from current text box
             if horizontal_dis > avg_text_h:
                 break
             else:
                 # check if vertical position suitable
-                if data[i].box[3] > data[j].box[1] and data[j].box[3] > data[i].box[1]:
+                if (
+                    data[i].get_y_max() > data[j].get_y_min()
+                    and data[j].get_y_max() > data[i].get_y_min()
+                ):
                     # if match: put text[i] into bubble of text[j]
                     bubble_speech[bubble_id[j]] += data[i].text
                     bubble_id[i] = bubble_id[j]
@@ -80,7 +95,7 @@ def clean_text(data) -> list[str]:
     return bubble_speech
 
 
-def remove_furigana(data) -> list[OCRResult]:
+def remove_furigana(data: list[OCRResult]) -> list[OCRResult]:
     # remove furigana by remove all text with confidence score smaller than 0.8
     data = [r for r in data if r.score >= 0.8]
     return data
