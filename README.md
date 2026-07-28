@@ -5,7 +5,8 @@
 * python
 * Paddle OCR, model PP-OCRv6_medium_det
 * general OCR pipeline
-* Database: SQLite, SQLAlchemy
+* Database: SQLite, DBeaver
+* Dictionary: JMDict
 
 ### Description
 
