@@ -7,7 +7,7 @@ from pathlib import Path
 # ==========================
 
 DICT_DIR = Path("database/JMdict_english")  # folder chứa term_bank_*.json
-DB_PATH = Path("jmdict.db")
+DB_PATH = Path("databae/jmdict.db")
 
 # ==========================
 # POS mapping
