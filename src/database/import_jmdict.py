@@ -6,8 +6,8 @@ from pathlib import Path
 # Config
 # ==========================
 
-DICT_DIR = Path("database/JMdict_english")  # folder chứa term_bank_*.json
-DB_PATH = Path("databae/jmdict.db")
+DICT_PATH = Path("jmdictExtended.json")
+DB_PATH = Path("dictionary.db")
 
 # ==========================
 # POS mapping
@@ -34,46 +34,45 @@ POS_MAP = {
 }
 
 
-def extract_pos(definition_tags: str) -> str:
+def extract_pos(senses) -> str:
     pos = []
 
-    for tag in definition_tags.split():
-        for prefix, mapped in POS_MAP.items():
-            if tag == prefix or tag.startswith(prefix):
-                if mapped not in pos:
-                    pos.append(mapped)
+    for sense in senses:
+        for tag in sense.get("partOfSpeech", []):
+            for prefix, mapped in POS_MAP.items():
+                if tag == prefix or tag.startswith(prefix):
+                    if mapped not in pos:
+                        pos.append(mapped)
 
     return "|".join(pos)
 
 
-# ==========================
-# Glossary parser
-# ==========================
+def extract_glossary(senses) -> str:
+    glossary = []
+
+    for sense in senses:
+        for gloss in sense.get("gloss", []):
+            text = gloss.get("text", "").strip()
+            if text and text not in glossary:
+                glossary.append(text)
+
+    return "; ".join(glossary)
 
 
-def extract_glossary(glossary_data) -> str:
-    result = []
+def extract_jlpt(entry):
+    # Search kanji first
+    for kanji in entry.get("kanji", []):
+        jlpt = kanji.get("jlptLevel")
+        if jlpt is not None:
+            return jlpt
 
-    def walk(node):
-        if isinstance(node, str):
-            text = node.strip()
-            if text:
-                result.append(text)
+    # Then search kana
+    for kana in entry.get("kana", []):
+        jlpt = kana.get("jlptLevel")
+        if jlpt is not None:
+            return jlpt
 
-        elif isinstance(node, list):
-            for item in node:
-                walk(item)
-
-        elif isinstance(node, dict):
-            if "content" in node:
-                walk(node["content"])
-
-    walk(glossary_data)
-
-    # remove duplicates while preserving order
-    result = list(dict.fromkeys(result))
-
-    return "; ".join(result)
+    return None
 
 
 # ==========================
@@ -85,11 +84,13 @@ cur = conn.cursor()
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS entries(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER,
     expression TEXT NOT NULL,
     reading TEXT NOT NULL,
     pos TEXT,
-    glossary TEXT
+    glossary TEXT,
+    jlpt INTEGER,
+    PRIMARY KEY(id, expression)
 )
 """)
 
@@ -99,39 +100,55 @@ cur.execute("DELETE FROM entries")
 # Import
 # ==========================
 
-files = sorted(DICT_DIR.glob("term_bank_*.json"))
+with open(DICT_PATH, "r", encoding="utf-8-sig") as f:
+    data = json.load(f)
 
-for file in files:
-    print(f"Importing {file.name}")
+for entry in data.get("words", []):
+    entry_id = int(entry["id"])
 
-    with open(file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    senses = entry.get("sense", [])
+    pos = extract_pos(senses)
+    glossary = extract_glossary(senses)
+    jlpt = extract_jlpt(entry)
 
-    for entry in data:
-        expression = entry[0]
-        reading = entry[1]
-        definition_tags = entry[2]
-        glossary_data = entry[5]
+    kanji_list = entry.get("kanji", [])
+    kana_list = entry.get("kana", [])
 
-        # Skip form entries
-        if definition_tags == "forms":
-            continue
+    if kanji_list:
+        reading = kana_list[0]["text"] if kana_list else ""
 
-        pos = extract_pos(definition_tags)
-        glossary = extract_glossary(glossary_data)
+        for kanji in kanji_list:
+            cur.execute(
+                """
+                INSERT INTO entries(id, expression, reading, pos, glossary, jlpt)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry_id,
+                    kanji["text"],
+                    reading,
+                    pos,
+                    glossary,
+                    jlpt,
+                ),
+            )
 
-        cur.execute(
-            """
-            INSERT INTO entries(expression, reading, pos, glossary)
-            VALUES (?, ?, ?, ?)
-            """,
-            (
-                expression,
-                reading,
-                pos,
-                glossary,
-            ),
-        )
+    else:
+        for kana in kana_list:
+            cur.execute(
+                """
+                INSERT INTO entries(id, expression, reading, pos, glossary, jlpt)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry_id,
+                    kana["text"],
+                    kana["text"],
+                    pos,
+                    glossary,
+                    jlpt,
+                ),
+            )
 
 conn.commit()
 
