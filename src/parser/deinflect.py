@@ -62,19 +62,3 @@ def apply_rule(candidate: Candidate, rule: Rule) -> Candidate | None:
         return Candidate(new_text, rule.conditions_out)
     else:
         return None
-
-
-with open("deinflect_rules.json", encoding="utf-8") as f:
-    data = json.load(f)
-rules: list[Rule] = []
-
-for transform in data["transforms"].values():
-    for rule in transform["rules"]:
-        rules.append(
-            Rule(
-                inflected=rule["inflected"],
-                deinflected=rule["deinflected"],
-                conditions_in=rule["conditionsIn"],
-                conditions_out=rule["conditionsOut"],
-            )
-        )

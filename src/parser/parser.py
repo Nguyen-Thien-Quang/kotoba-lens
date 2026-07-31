@@ -1,5 +1,5 @@
 import sqlite3
-import deinflect
+from . import deinflect
 from collections import deque
 from dataclasses import dataclass
 
@@ -15,7 +15,7 @@ class Word:
     score: float = -1
 
 
-def parse(text: str) -> list[Word]:
+def parse(text: str, deinflect_rules) -> list[Word]:
     # configuration database connection
     conn = sqlite3.connect("database/dictionary.db")
     c = conn.cursor()
@@ -45,7 +45,7 @@ def parse(text: str) -> list[Word]:
                     break
                 else:
                     # apply deinflection and enqueue all generated output into queue
-                    for new_word in deinflect(word):
+                    for new_word in deinflect.deinflect(word, deinflect_rules):
                         # add unvisited word only
                         if new_word not in visited:
                             visited.add(new_word)
