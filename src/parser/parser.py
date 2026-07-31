@@ -1,5 +1,5 @@
 import sqlite3
-import indeflect
+import deinflect
 from collections import deque
 from dataclasses import dataclass
 
