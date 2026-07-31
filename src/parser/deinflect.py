@@ -1,3 +1,4 @@
+from collections import deque
 from dataclasses import dataclass
 import json
 
@@ -8,6 +9,7 @@ class Candidate:
     condition: set[str] | None = None
 
 
+# class represent each deinflection rule
 @dataclass
 class Rule:
     inflected: str
@@ -17,33 +19,45 @@ class Rule:
 
 
 def deinflect(word: str, rules: list[Rule]) -> list[str]:
-    queue = [Candidate(text=word, condition=None)]
-    visited = set()
+    queue = deque([Candidate(text=word, condition=None)])
+    visited = {word}
     result = []
 
+    # BFS using queue
     while queue:
-        candidate = queue.pop()
+        # take out candidate
+        candidate = queue.popleft()
 
+        # apply every possible rule
         for rule in rules:
             new_candidate = apply_rule(candidate, rule)
 
             if new_candidate:
+                # check whether new_candidate already existed
+                if new_candidate.text in visited:
+                    continue
+                visited.add(new_candidate.text)
                 queue.append(new_candidate)
-                result.append(new_candidate)
+                result.append(new_candidate.text)
 
     return result
 
 
+# apply specific rules for word
 def apply_rule(candidate: Candidate, rule: Rule) -> Candidate | None:
     text = candidate.text
     new_text = None
 
+    # check whether the ending match with rule inflected string
     if text.endswith(rule.inflected):
+        # check for condition input
         if candidate.condition == None or any(
             cond in rule.conditions_in for cond in candidate.condition
         ):
+            # replace old ending with new ending after deinflection
             new_text = text.removesuffix(rule.inflected) + rule.deinflected
 
+    # return new Candidate
     if new_text:
         return Candidate(new_text, rule.conditions_out)
     else:
