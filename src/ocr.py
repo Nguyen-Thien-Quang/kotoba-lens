@@ -1,4 +1,5 @@
 from pathlib import Path
+from statistics import median
 from dataclasses import dataclass
 import numpy as np
 
@@ -27,6 +28,9 @@ class OCRResult:
     def get_y_max(self) -> int:
         return self.box[3]
 
+    def get_text_width(self) -> int:
+        return self.get_x_max() - self.get_x_min()
+
 
 # call model inference and return list of OCRResult object
 def extract_text(image_path: str, model: PaddleOCR) -> list[OCRResult]:
@@ -54,8 +58,7 @@ def clean_text(data: list[OCRResult]) -> list[str]:
     # calculate average text height
     avg_text_h = 0
     for result in data:
-        avg_text_h += result.get_x_max() - result.get_x_min()
-
+        avg_text_h += result.get_text_width()
     avg_text_h = avg_text_h / len(data)
 
     # groups close OCRResults into same bubble_speech
@@ -96,6 +99,10 @@ def clean_text(data: list[OCRResult]) -> list[str]:
 
 
 def remove_furigana(data: list[OCRResult]) -> list[OCRResult]:
+
+    heights = [result.get_text_width() for result in data]
+    median_height = median(heights)
+
     # remove furigana by remove all text with confidence score smaller than 0.8
-    data = [r for r in data if r.score >= 0.8]
+    data = [r for r in data if r.get_text_width() >= 0.6 * median_height]
     return data
