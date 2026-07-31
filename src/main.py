@@ -1,5 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass
+from pprint import pprint
 import json
 
 from paddleocr import PaddleOCR
@@ -56,4 +57,4 @@ for text in lines:
     result = parser.parse(text, deinflect_rules)
 
     for word in result:
-        print(word)
+        pprint(word, indent=2, width=64)

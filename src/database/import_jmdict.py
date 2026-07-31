@@ -75,6 +75,21 @@ def extract_jlpt(entry):
     return None
 
 
+def extract_tags(entry):
+    # search kanji first
+    for kanji in entry.get("kanji", []):
+        tag = kanji.get("tags")
+        if tag is not None:
+            return "|".join(tag)
+
+    # then search kana
+    for kana in entry.get("kana", []):
+        tag = kana.get("tags")
+        if tag is not None:
+            return "|".join(tag)
+    return None
+
+
 # ==========================
 # Database
 # ==========================
@@ -90,6 +105,10 @@ CREATE TABLE IF NOT EXISTS entries(
     pos TEXT,
     glossary TEXT,
     jlpt INTEGER,
+    common BOOLEAN,
+    tag TEXT,
+    misc TEXT,
+    score INTEGER,
     PRIMARY KEY(id, expression)
 )
 """)
@@ -110,18 +129,22 @@ for entry in data.get("words", []):
     pos = extract_pos(senses)
     glossary = extract_glossary(senses)
     jlpt = extract_jlpt(entry)
+    tag = extract_tags(entry)
+    misc = "|".join(senses[0].get("misc", [])) if senses else ""
+    default_score = 0
 
     kanji_list = entry.get("kanji", [])
     kana_list = entry.get("kana", [])
 
     if kanji_list:
         reading = kana_list[0]["text"] if kana_list else ""
+        common = kanji_list[0]["common"]
 
         for kanji in kanji_list:
             cur.execute(
                 """
-                INSERT INTO entries(id, expression, reading, pos, glossary, jlpt)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO entries(id, expression, reading, pos, glossary, jlpt, common, tag, misc, score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     entry_id,
@@ -130,15 +153,20 @@ for entry in data.get("words", []):
                     pos,
                     glossary,
                     jlpt,
+                    common,
+                    tag,
+                    misc,
+                    default_score,
                 ),
             )
 
     else:
+        common = kana_list[0]["common"]
         for kana in kana_list:
             cur.execute(
                 """
-                INSERT INTO entries(id, expression, reading, pos, glossary, jlpt)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO entries(id, expression, reading, pos, glossary, jlpt, common, tag, misc, score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     entry_id,
@@ -147,6 +175,10 @@ for entry in data.get("words", []):
                     pos,
                     glossary,
                     jlpt,
+                    common,
+                    tag,
+                    misc,
+                    default_score,
                 ),
             )
 
