@@ -59,7 +59,13 @@ def parse(text: str, deinflect_rules) -> list[Word]:
     return output
 
 
-def look_up(word: str, c) -> list[Word]:
-    c.execute("SELECT * FROM entries WHERE expression = ?", (word,))
+def look_up(word: str, c) -> list[Word] | None:
+    c.execute(
+        "SELECT id, expression, reading, pos, glossary, score FROM entries WHERE expression = ? AND pos != ''",
+        (word,),
+    )
     result = [Word(*row) for row in c.fetchall()]
-    return result
+    if len(result) == 1:
+        return result
+    else:
+        return None
