@@ -21,44 +21,8 @@ class ImageViewerApp(QWidget):
         super().__init__()
         self.setWindowTitle("kotoba lens~")
         self.resize(1000, 600)
-
-        # --- Layouts ---
-        main_layout = QVBoxLayout(self)
-
-        # Top Bar: Upload Button & Selected Folder Path Label
-        top_bar_layout = QHBoxLayout()
-        self.btn_upload = QPushButton("📁 Select Folder")
-        self.btn_upload.setFixedHeight(40)
-        self.lbl_folder_path = QLabel("No folder selected")
-        self.lbl_folder_path.setStyleSheet("color: #665; font-style: italic;")
-
-        top_bar_layout.addWidget(self.btn_upload)
-        top_bar_layout.addWidget(self.lbl_folder_path)
-        top_bar_layout.addStretch()
-
-        # Content Area: Split between Thumbnail List and Image Display
-        content_layout = QHBoxLayout()
-
-        # Left side: List of images
-        self.image_list = QListWidget()
-        self.image_list.setFixedWidth(250)
-        self.image_list.setIconSize(QSize(60, 60))
-
-        # Right side: Main Image Preview
-        self.image_preview = QLabel("Select an image from the list to view")
-        self.image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_preview.setStyleSheet(
-            "border: 2px dashed #cccccc; background-color: #f9f9f9;"
-        )
-        
-        self.image_preview.setMinimumSize(1, 1)
-
-        content_layout.addWidget(self.image_list)
-        content_layout.addWidget(self.image_preview, stretch=1)
-
-        # Add top bar and content area to main layout
-        main_layout.addLayout(top_bar_layout)
-        main_layout.addLayout(content_layout)
+        # create top_bar and image contents component
+        self._init_ui()
 
         # --- Signal Connections ---
         self.btn_upload.clicked.connect(self.open_folder_dialog)
@@ -66,6 +30,54 @@ class ImageViewerApp(QWidget):
 
         # Keep track of current image pixmap for proper resizing
         self.current_pixmap = None
+
+    def _init_ui(self):
+        # create main_layout
+        main_layout = QVBoxLayout(self)
+        # create top bar component
+        main_layout.addLayout(self._create_top_bar())
+        # create content area component
+        main_layout.addLayout(self._create_content())
+
+
+    def _create_top_bar(self):
+        # initial layout
+        top_bar_layout = QHBoxLayout()
+        # crreate upload button
+        self.btn_upload = QPushButton("📁 Select Folder")
+        self.btn_upload.setFixedHeight(30)
+        self.lbl_folder_path = QLabel("No folder selected")
+        self.lbl_folder_path.setStyleSheet("color: #665; font-style: italic;")
+
+        top_bar_layout.addWidget(self.btn_upload)
+        top_bar_layout.addWidget(self.lbl_folder_path)
+        top_bar_layout.addStretch()
+
+        return top_bar_layout
+
+
+    def _create_content(self):
+
+        content_layout = QHBoxLayout()
+
+        # Left side: List of images
+        self.image_list = QListWidget()
+        self.image_list.setFixedWidth(150)
+        self.image_list.setIconSize(QSize(20, 20))
+
+        # Right side: Main Image Preview
+        self.image_preview = QLabel("Select an image from the list to view")
+        self.image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image_preview.setStyleSheet(
+            "border: 2px dashed #665; background-color: #f9f9f9;"
+        )
+        
+        self.image_preview.setMinimumSize(1, 1)
+        content_layout.addWidget(self.image_list)
+        content_layout.addWidget(self.image_preview, stretch=1)
+
+        return content_layout
+
 
     def open_folder_dialog(self):
         """Opens a file dialog to select a directory."""
@@ -87,14 +99,10 @@ class ImageViewerApp(QWidget):
 
         for file_path in folder.iterdir():
             if file_path.is_file() and file_path.suffix.lower() in IMAGE_EXTENSIONS:
+                # row item only show file's name instead of file's path
                 item = QListWidgetItem(file_path.name)
                 # Store full Path object in custom user role
                 item.setData(Qt.ItemDataRole.UserRole, file_path)
-
-                # Set a small thumbnail icon in the list
-                pixmap = QPixmap(str(file_path))
-                if not pixmap.isNull():
-                    item.setIcon(QIcon(pixmap.scaled(60, 60, Qt.AspectRatioMode.KeepAspectRatio)))
 
                 self.image_list.addItem(item)
 
