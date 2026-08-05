@@ -219,5 +219,5 @@ __marimo__/
 
 
 # dictionary
-src/database/jmdictExtended.json
+src/database/json/jmdictExtended.json
 src/database/KANJIS.json
