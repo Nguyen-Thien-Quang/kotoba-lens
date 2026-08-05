@@ -1,8 +1,11 @@
 import math
+import sys
 from pathlib import Path
-from db_config import kanji_dict_connection
 from dataclasses import dataclass
 from math import log
+SRC_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(SRC_DIR))
+from db_config import kanji_dict_connection
 
 @dataclass
 class Kanji:
