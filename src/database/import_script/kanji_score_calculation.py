@@ -1,9 +1,8 @@
 import math
-import sqlite3
 from pathlib import Path
+from db_config import kanji_dict_connection
 from dataclasses import dataclass
 from math import log
-DB_PATH = Path("kanji.db")
 
 @dataclass
 class Kanji:
@@ -14,7 +13,7 @@ class Kanji:
     score: float | None
 
 
-conn = sqlite3.connect(DB_PATH)
+conn = kanji_dict_connection()
 cur = conn.cursor()
 
 cur.execute("SELECT * FROM kanji")
@@ -31,7 +30,6 @@ for kanji in result:
     "UPDATE kanji SET score = ? WHERE literal = ?",
     (final_score, kanji.text),
     )
-
 
 conn.commit()
 conn.close()   

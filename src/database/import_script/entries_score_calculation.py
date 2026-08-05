@@ -2,6 +2,7 @@ import sqlite3
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from db_config import kanji_dict_connection, dictionary_connection
 
 
 # calculate kanji difficulties in an expression
@@ -26,17 +27,17 @@ def kanji_score(expression: str, kanji_cursor) -> float:
         return 0
 
 # JMdict dictionary database connect configuration
-dict_conn = sqlite3.connect("dictionary.db")
+dict_conn = dictionary_connection()
 dict_cur = dict_conn.cursor()
 
 # kanji dictionary database connect configuration
-kanji_conn = sqlite3.connect("kanji.db")
+kanji_conn = kanji_dict_connection()
 kanji_cur = kanji_conn.cursor()
 
 dict_cur.execute("""
     SELECT id, expression, pos, jlpt, common
     FROM entries
-""")
+    """)
 
 for entry_id, expression, pos, jlpt_level, common in dict_cur.fetchall():
     kanji_sc = kanji_score(expression, kanji_cur)

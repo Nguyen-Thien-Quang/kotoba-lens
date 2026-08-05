@@ -1,13 +1,12 @@
 import json
-import sqlite3
 from pathlib import Path
+from db_config import dictionary_connection
 
 # ==========================
 # Config
 # ==========================
 
 DICT_PATH = Path("jmdictExtended.json")
-DB_PATH = Path("dictionary.db")
 
 # ==========================
 # POS mapping
@@ -94,7 +93,7 @@ def extract_tags(entry):
 # Database
 # ==========================
 
-conn = sqlite3.connect(DB_PATH)
+conn = dictionary_connection()
 cur = conn.cursor()
 
 cur.execute("""

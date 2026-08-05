@@ -12,7 +12,7 @@ class Word:
     reading: str
     pos: str
     meaning: str
-    score: float = -1
+    score: float
 
 
 def parse(text: str, deinflect_rules) -> list[Word]:

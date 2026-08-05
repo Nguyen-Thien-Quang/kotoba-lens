@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from pprint import pprint
 import json
 import logging
+import sqlite3
 
+from numpy import integer
 from paddleocr import PaddleOCR
 from paddlex.inference.common.batch_sampler import text_batch_sampler
 from paddlex.inference.common.result.converter import build_word_blocks
@@ -11,10 +13,11 @@ from paddlex.inference.common.result.converter import build_word_blocks
 import ocr
 from parser import parser
 from parser.deinflect import deinflect
+from database.schema import add_word
 
 # logging configurations
 
-logging.basicConfig(filename='log/system.log', level=logging.INFO,
+logging.basicConfig(filename='log/system.log', level=logging.INFO, force=True,
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
 # class represent each deinflection rule
@@ -44,28 +47,49 @@ logging.info('Done OCR process, result returned with: {} bounding boxes'.format(
 # groups text box from same bubble speech into ones
 lines = ocr.clean_text(text_boxes)
 logging.info('result return with {} bubble speeches'.format(len(lines)))
-# loading deinflected rules from json file
-with open("parser/deinflect_rules.json", encoding="utf-8") as f:
-    data = json.load(f)
-deinflect_rules: list[Rule] = []
 
-logging.debug('start load deinflection rules..')
-
-for transform in data["transforms"].values():
-    for rule in transform["rules"]:
-        deinflect_rules.append(
-            Rule(
-                inflected=rule["inflected"],
-                deinflected=rule["deinflected"],
-                conditions_in=rule["conditionsIn"],
-                conditions_out=rule["conditionsOut"],
-            )
-        )
+deinflect_rules = load_deinflection_rules()
 
 logging.info('start looking up word in dictionary')
+# parsing vocabularies from texts
+output = []
 for text in lines:
     # receive list of word objects
     result = parser.parse(text, deinflect_rules)
+    output.extend(result)
 
-    for word in result:
-        print(str(word.id) + ". " + word.lemma + ":" + word.meaning)
+output.sort(key=lambda r: r.score, reverse=True)
+
+num_of_words = 5
+
+for i in range(num_of_words):
+    print(output[i].lemma + "|" + output[i].meaning)
+
+
+
+def add_words_to_DB(words: list[parser.Word], image_id: int, cursor):
+    for i, word in enumerate(words):
+        add_word(image_id, word.lemma, word.pos, word.reading, word.meaning, word.score, i, cursor)
+
+    
+def load_deinflection_rules() -> list[Rule]:
+    with open("parser/deinflect_rules.json", encoding="utf-8") as f:
+        data = json.load(f)
+    deinflect_rules: list[Rule] = []
+
+    logging.debug('start load deinflection rules..')
+
+    for transform in data["transforms"].values():
+        for rule in transform["rules"]:
+            deinflect_rules.append(
+                Rule(
+                    inflected=rule["inflected"],
+                    deinflected=rule["deinflected"],
+                    conditions_in=rule["conditionsIn"],
+                    conditions_out=rule["conditionsOut"],
+                )
+            )
+
+    return deinflect_rules
+
+

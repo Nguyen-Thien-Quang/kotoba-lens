@@ -1,18 +1,17 @@
 import json
-import sqlite3
 from pathlib import Path
+from db_config import kanji_dict_connection
 # ==========================
 # Config
 # ==========================
 
 DICT_PATH = Path("KANJIS.json")
-DB_PATH = Path("kanji.db")
 
 # ==========================
 # Database
 # ==========================
 
-conn = sqlite3.connect(DB_PATH)
+conn = kanji_dict_connection()
 cur = conn.cursor()
 
 cur.execute("""
