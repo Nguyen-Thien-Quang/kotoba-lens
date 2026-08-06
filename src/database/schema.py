@@ -1,49 +1,7 @@
 import sqlite3
-from .db_config import database_connection
+from db_config import database_connection
 
 from numpy import integer
-
-
-
-# insert new word into database
-def add_word(image_id: int,
-             lemma: str, 
-             pos: str, 
-             reading: str, 
-             meaning: str, 
-             score: float, 
-             order: int, 
-             cursor):
-    cursor.execute(
-        """
-        INSERT INTO WORDS (LEMMA, POS, READING, MEANING, SCORE)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (lemma, pos, reading, meaning, score),
-    )
-
-    word_id = cursor.lastrowid
-    cursor.execute(
-        """
-        INSERT INTO IMAGES_WORDS (IMAGE_ID, WORD_ID, WORD_ORDER)
-        VALUES (?, ?, ?)
-        """,
-        (image_id, word_id, order),
-    )
-
-def add_image(book_id: int,
-              path: str,
-              ocr_result: str,
-              page: int,
-              cursor):
-    cursor.execute(
-            """
-            INSERT INTO IMAGES (BOOK_ID, PATH, OCR_RESULT, PAGE)
-            VALUES (?, ?, ?, ?)
-            """,
-            (book_id, path, ocr_result, page),
-    )
-
 
 
 if __name__ == "__main__":
@@ -67,7 +25,7 @@ if __name__ == "__main__":
             c.execute("""
             CREATE TABLE IMAGES (
                 IMG_ID INTEGER PRIMARY KEY,
-                BOOK_ID INTEGER UNIQUE,
+                BOOK_ID INTEGER ,
                 PATH TEXT NOT NULL,
                 OCR_RESULT TEXT,
                 IMPORT_TIME TEXT DEFAULT (datetime('now', 'localtime')),
