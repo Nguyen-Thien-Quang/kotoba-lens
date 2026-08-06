@@ -1,6 +1,5 @@
 import sqlite3
 from db_config import database_connection
-
 from numpy import integer
 
 

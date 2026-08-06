@@ -17,8 +17,9 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
 
 
 class ImageViewerApp(QWidget):
-    def __init__(self):
+    def __init__(self, context):
         super().__init__()
+        self.context = context
         self.setWindowTitle("kotoba lens~")
         self.resize(1000, 600)
         # create top_bar and image contents component
