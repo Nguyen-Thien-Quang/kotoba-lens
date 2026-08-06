@@ -29,16 +29,30 @@ def add_image(book_id: int,
               path: str,
               ocr_result: str,
               page: int,
-              cursor) -> int:
+              cursor) -> int | None:
+
     cursor.execute(
             """
-            INSERT INTO IMAGES (BOOK_ID, PATH, OCR_RESULT, PAGE)
-            VALUES (?, ?, ?, ?)
+            SELECT IMG_ID FROM IMAGES
+            WHERE PATH = ?
             """,
-            (book_id, path, ocr_result, page),
-        )
+            (path,),
+            )
+    image_id = cursor.fetchone()
 
-    image_id = cursor.lastrowid
+    if image_id is None:
+        cursor.execute(
+                """
+                INSERT INTO IMAGES (BOOK_ID, PATH, OCR_RESULT, PAGE)
+                VALUES (?, ?, ?, ?)
+                """,
+                (book_id, path, ocr_result, page),
+            )
+
+        image_id = cursor.lastrowid
+    else:
+        image_id = None
+
     return image_id
 
 
