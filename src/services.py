@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from parser import parser
 from parser.deinflect import deinflect, load_deinflection_rules
-from DAO import add_word, add_image
+from DAO import add_word, add_image, add_book
 
 def add_words_to_DB(words: list[parser.Word], image_id: int, cursor):
     for i, word in enumerate(words):
@@ -19,6 +19,8 @@ def add_words_to_DB(words: list[parser.Word], image_id: int, cursor):
 
 
 def image_process(image_path: Path,
+                  book_id,
+                  page: int,
                   model,
                   deinflect_rules ,
                   c): 
@@ -39,7 +41,7 @@ def image_process(image_path: Path,
     output.sort(key=lambda r: r.score, reverse=True)
 
     # load inmages and word into database
-    image_id = load_image(-1, str(image_path), raw_result, -1, c)
+    image_id = load_image(book_id, str(image_path), raw_result, page, c)
     if image_id is not None:
         add_words_to_DB(output, image_id, c)
 
@@ -47,3 +49,16 @@ def load_image(book_id: int, path: str, raw_result: str, page: int, cursor) -> i
     return add_image(book_id, path, raw_result, page, cursor)
 
 
+def import_folder(fld_path, name, model, rules, cur) -> int:
+    folder = Path(fld_path)
+    IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
+    # insert new book into database
+    book_id = add_book(name, fld_path, cur) 
+    # process each images
+    page_count = 0
+    for page, file_path in enumerate(sorted(folder.iterdir()), start=1):
+        if file_path.is_file() and file_path.suffix.lower() in IMAGE_EXTENSIONS:
+            image_process(file_path, book_id, page, model, rules, cur)
+            page_count += 1
+
+    return page_count

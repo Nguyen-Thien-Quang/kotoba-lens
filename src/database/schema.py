@@ -16,7 +16,7 @@ if __name__ == "__main__":
                 BOOK_ID INTEGER PRIMARY KEY,
                 NAME TEXT NOT NULL,
                 PATH TEXT NOT NULL,
-                CREATED_AT TEXT
+                CREATED_AT TEXT DEFAULT (datetime('now', 'localtime'))
             )
             """)
 

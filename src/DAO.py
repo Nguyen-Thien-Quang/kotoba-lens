@@ -38,9 +38,9 @@ def add_image(book_id: int,
             """,
             (path,),
             )
-    image_id = cursor.fetchone()
+    existed = cursor.fetchone()
 
-    if image_id is None:
+    if existed is None:
         cursor.execute(
                 """
                 INSERT INTO IMAGES (BOOK_ID, PATH, OCR_RESULT, PAGE)
@@ -49,12 +49,31 @@ def add_image(book_id: int,
                 (book_id, path, ocr_result, page),
             )
 
-        image_id = cursor.lastrowid
+        return cursor.lastrowid
     else:
-        image_id = None
-
-    return image_id
+        return None
 
 
+def add_book(name: str, path: str, cursor) -> int | None:
+    cursor.execute(
+            """
+            SELECT BOOK_ID FROM BOOKS
+            WHERE PATH = ?
+            """,
+            (path,),
+            )
+    existed = cursor.fetchone()
+
+    if existed is None:
+        cursor.execute(
+                """
+                INSERT INTO BOOKS (NAME, PATH)
+                VALUES (?, ?)
+                """,
+                (name, path),
+                )
+        return cursor.lastrowid
+    else:
+        return None
 
 
