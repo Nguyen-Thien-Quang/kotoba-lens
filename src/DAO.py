@@ -1,3 +1,15 @@
+from dataclasses import dataclass
+
+@dataclass
+class Word:
+    id: int
+    lemma: str
+    reading: str
+    pos: str
+    meaning: str
+    score: float
+
+
 
 # insert new word into database
 def add_word(image_id: int,
@@ -76,4 +88,16 @@ def add_book(name: str, path: str, cursor) -> int | None:
     else:
         return None
 
+def get_words_from_image(img_path: str, cur) -> list[Word]:
+    cur.execute(
+            """
+            SELECT WORDS.WORD_ID, LEMMA, READING, POS, MEANING, SCORE 
+            FROM WORDS
+            JOIN IMAGES_WORDS ON IMAGES_WORDS.WORD_ID = WORDS.WORD_ID
+            JOIN IMAGES ON IMAGES.IMG_ID = IMAGES_WORDS.IMAGE_ID
+            WHERE IMAGES.PATH = ?
+            """,
+            (img_path,),
+            )
 
+    return [Word(*row) for row in cur.fetchall()]

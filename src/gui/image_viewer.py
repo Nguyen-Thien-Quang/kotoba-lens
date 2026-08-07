@@ -12,6 +12,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from DAO import get_words_from_image
+from app_context import AppContext
+
 # Supported image extensions
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
 
@@ -66,16 +69,21 @@ class ImageViewerApp(QWidget):
         self.image_list.setFixedWidth(150)
         self.image_list.setIconSize(QSize(20, 20))
 
-        # Right side: Main Image Preview
+        # Center : Main Image Preview
         self.image_preview = QLabel("Select an image from the list to view")
         self.image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_preview.setStyleSheet(
             "border: 2px dashed #665; background-color: #f9f9f9;"
         )
         
+        # Right side: List of words
+        self.word_list = QListWidget()
+
+
         self.image_preview.setMinimumSize(1, 1)
         content_layout.addWidget(self.image_list)
         content_layout.addWidget(self.image_preview, stretch=1)
+        content_layout.addWidget(self.word_list)
 
         return content_layout
 
@@ -112,6 +120,12 @@ class ImageViewerApp(QWidget):
         file_path = item.data(Qt.ItemDataRole.UserRole)
         self.current_pixmap = QPixmap(str(file_path))
         self.update_preview()
+
+        words = get_words_from_image(str(file_path), self.context.connection.cursor())
+        self.word_list.clear()
+
+        for word in words[:5]:
+            self.word_list.addItem(word.lemma + ":" + word.meaning)
 
     def update_preview(self):
         """Scales and updates the preview image when loaded or resized."""
