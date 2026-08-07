@@ -60,7 +60,7 @@ def add_image(book_id: int,
                 """,
                 (book_id, path, ocr_result, page),
             )
-
+        print("image imported\n")
         return cursor.lastrowid
     else:
         return None
@@ -84,6 +84,7 @@ def add_book(name: str, path: str, cursor) -> int | None:
                 """,
                 (name, path),
                 )
+        print("folder imported\n")
         return cursor.lastrowid
     else:
         return None

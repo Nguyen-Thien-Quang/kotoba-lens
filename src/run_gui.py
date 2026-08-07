@@ -13,6 +13,9 @@ if __name__ == "__main__":
 
     window = ImageViewerApp(context)
     window.show()
-    sys.exit(app.exec())
-
+    try:
+        sys.exit(app.exec())
+    finally:
+        context.connection.commit()
+        context.connection.close()
 

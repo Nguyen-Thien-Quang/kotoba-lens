@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 
 from DAO import get_words_from_image
 from app_context import AppContext
+from services import import_folder
 
 # Supported image extensions
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
@@ -115,6 +116,11 @@ class ImageViewerApp(QWidget):
 
                 self.image_list.addItem(item)
 
+        import_folder(folder_path,
+                      self.context.model, 
+                      self.context.deinflection_rules, 
+                      self.context.connection.cursor())
+
     def display_image(self, item):
         """Displays the clicked image in the main preview area."""
         file_path = item.data(Qt.ItemDataRole.UserRole)
@@ -123,8 +129,9 @@ class ImageViewerApp(QWidget):
 
         words = get_words_from_image(str(file_path), self.context.connection.cursor())
         self.word_list.clear()
-
-        for word in words[:5]:
+        
+        number_of_words = 10
+        for word in words[:number_of_words]:
             self.word_list.addItem(word.lemma + ":" + word.meaning)
 
     def update_preview(self):

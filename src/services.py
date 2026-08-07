@@ -49,16 +49,17 @@ def load_image(book_id: int, path: str, raw_result: str, page: int, cursor) -> i
     return add_image(book_id, path, raw_result, page, cursor)
 
 
-def import_folder(fld_path, name, model, rules, cur) -> int:
+def import_folder(fld_path, model, rules, cur) -> int:
     folder = Path(fld_path)
     IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
     # insert new book into database
-    book_id = add_book(name, fld_path, cur) 
-    # process each images
+    book_id = add_book(folder.name, fld_path, cur)
     page_count = 0
-    for page, file_path in enumerate(sorted(folder.iterdir()), start=1):
-        if file_path.is_file() and file_path.suffix.lower() in IMAGE_EXTENSIONS:
-            image_process(file_path, book_id, page, model, rules, cur)
-            page_count += 1
+    if book_id is not None:
+        # process each images
+        for page, file_path in enumerate(sorted(folder.iterdir()), start=1):
+            if file_path.is_file() and file_path.suffix.lower() in IMAGE_EXTENSIONS:
+                image_process(file_path, book_id, page, model, rules, cur)
+                page_count += 1
 
     return page_count
