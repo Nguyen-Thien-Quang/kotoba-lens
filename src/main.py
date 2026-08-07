@@ -1,13 +1,22 @@
-# Verify that PaddleOCR is installed successfully
-import paddleocr
-print(f"PaddleOCR version: {paddleocr.__version__}")
+from pathlib import Path
+from database import db_config
+from app_context import AppContext
+from services import image_process
 
-# If you use the local paddle_static inference engine, you can further verify PaddlePaddle and GPU availability
-import paddle
-print(f"Paddle version: {paddle.__version__}")
-print(f"GPU available: {paddle.is_compiled_with_cuda()}")
-print(f"GPU count: {paddle.device.cuda.device_count()}")
+    
+if __name__ == "__main__":
 
-# If you use the transformers inference engine, you can further verify the transformers dependency
-import transformers
-print(f"Transformers version: {transformers.__version__}")
+    context = AppContext()
+    conn = context.connection
+    rules = context.deinflection_rules
+    model = context.model
+
+# specify image_path
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    image_path = PROJECT_ROOT / "images" / "image1.jpg"
+
+# ocr image and parser all the vocabularies from text
+    output = image_process(image_path, -1, -1, model, rules, conn.cursor())
+    conn.commit()
+    conn.close()
+
