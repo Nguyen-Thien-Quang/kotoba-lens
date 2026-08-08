@@ -1,4 +1,4 @@
-# 📸 Kotoba Lens（ことばレンズ）
+# Kotoba Lens
 
 > **Turn any image of Japanese text into an ordered, level-tagged vocabulary list.**
 
@@ -29,7 +29,7 @@ studying next.
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 | Area              | Technology                                              | Notes                                        |
 | ----------------- | ------------------------------------------------------- | -------------------------------------------- |
@@ -45,7 +45,7 @@ studying next.
 
 ---
 
-## 🔍 How it works (processing pipeline)
+## How it works (processing pipeline)
 
 ```
                 ┌──────────────────────────────────────────────┐
@@ -104,34 +104,28 @@ studying next.
 
 ## ⚙️ Installation
 
-### 1. Prerequisites
+Requires Python 3.12+ and a PaddleOCR-compatible PaddlePaddle install; see the [PaddleOCR install guide](https://www.paddleocr.ai/main/en/install.html) for platform-specific wheels.
 
-- Python 3.12+
-- PaddlePaddle (see [PaddleOCR install guide](https://www.paddleocr.ai/main/en/install.html) —
-  platform-specific wheel may be needed)
-
-### 2. Create a virtual environment & install dependencies
+### Quick start
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
-pip install paddleocr paddlex paddlepaddle pyside6 numpy
+pip install paddlepaddle paddleocr
+cd src
+pip install -r requirements.txt
 ```
 
-> The tracked environment under `src/env/` is a working install snapshot; it's *gitignored* and not
-> used by `main.py`/`run_gui.py` — prefer your own virtual environment.
+PaddleOCR and PaddlePaddle are regular PyPI packages, so the same `pip install` works on Linux, macOS, and Windows. GPU support is `pip install paddlepaddle-gpu`.
 
-### 3. Reproduce the JSON data sources (config scripts)
+Notes:
 
-The raw dictionary sources are **not** tracked (very large):
-
-- `src/database/json/jmdictExtended.json` (≈167 MB) is required to (re)build `dictionary.db`.
-- `src/database/json/KANJIS.json` is tracked (~7 MB).
+- `src/env/` is a gitignored working-install snapshot; use your own virtual environment instead.
+- `src/database/json/jmdictExtended.json` (≈167 MB) is not tracked; it is only needed to rebuild `dictionary.db` from source.
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### GUI mode (recommended)
 
