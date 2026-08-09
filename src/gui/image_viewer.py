@@ -118,7 +118,9 @@ class ImageViewerApp(QWidget):
 
         import_folder(folder_path,
                       self.context.model, 
-                      self.context.deinflection_rules, 
+                      self.context.deinflection_rules,
+                      self.context.expressions_dict,
+                      self.context.dict_DB_connection.cursor(),
                       self.context.connection.cursor())
 
     def display_image(self, item):

@@ -2,6 +2,7 @@ import sqlite3
 from . import deinflect
 from collections import deque
 from dataclasses import dataclass
+from database.db_config import dictionary_connection
 
 
 # dataclass for vocabulary in output
@@ -15,10 +16,7 @@ class Word:
     score: float
 
 
-def parse(text: str, deinflect_rules) -> list[Word]:
-    # configuration database connection
-    conn = sqlite3.connect("database/dictionary.db")
-    c = conn.cursor()
+def parse(text: str, deinflect_rules, dict_set: set[str], dict_cur) -> list[Word]:
     MAX_EXPRESSION_LENGTH = 10
 
     output = []
@@ -37,7 +35,7 @@ def parse(text: str, deinflect_rules) -> list[Word]:
             visited = {candidate}
             while queue:
                 word = queue.pop()
-                result = look_up(word, c)
+                result = look_up(word, dict_cur, dict_set)
                 if result:
                     output.extend(result)  # add all the list of entries into result
                     pos += length  # move cursor to the next charater of string
@@ -55,17 +53,29 @@ def parse(text: str, deinflect_rules) -> list[Word]:
         # if no result founded for all length of substring, iterate next charater
         if not flag:
             pos += 1
-    conn.close()
     return output
 
 
-def look_up(word: str, c) -> list[Word] | None:
+def look_up(word: str, c, dict_set: set[str]) -> list[Word] | None:
+    if word not in dict_set:
+        return None
+
     c.execute(
-        "SELECT id, expression, reading, pos, glossary, score FROM entries WHERE expression = ? AND pos != ''",
-        (word,),
-    )
+            """
+            SELECT id, expression, reading, pos, glossary, score 
+            FROM entries 
+            WHERE expression = ?
+            """,
+            (word,),
+            )
     result = [Word(*row) for row in c.fetchall()]
-    if len(result) == 1:
+    if len(result) == 1 and result[0].pos != "":
         return result
     else:
         return None
+
+def load_virtual_dict(c) -> set[str]:
+    c.execute("SELECT expression FROM entries")
+    known_expressions = {row[0] for row in c.fetchall()}
+    return known_expressions
+

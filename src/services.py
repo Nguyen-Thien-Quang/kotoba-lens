@@ -1,11 +1,13 @@
+from paddleocr import PaddleOCR
+
 import ocr
 from dataclasses import dataclass
 from pathlib import Path
 from parser import parser
-from parser.deinflect import deinflect, load_deinflection_rules
+from parser.deinflect import Rule, deinflect, load_deinflection_rules
 from DAO import add_word, add_image, add_book
 
-def add_words_to_DB(words: list[parser.Word], image_id: int, cursor):
+def add_words_to_DB(words: list[parser.Word], image_id: int, main_cur):
     for i, word in enumerate(words):
         add_word(image_id,
                  word.lemma,
@@ -14,7 +16,7 @@ def add_words_to_DB(words: list[parser.Word], image_id: int, cursor):
                  word.meaning, 
                  word.score, 
                  i, 
-                 cursor)
+                 main_cur)
 
 
 
@@ -23,7 +25,9 @@ def image_process(image_path: Path,
                   page: int,
                   model,
                   deinflect_rules ,
-                  c): 
+                  dict_set: set[str],
+                  dict_cur,
+                  main_cur): 
     # extract text from image,output list of object contain text, bouding boxes and score
     text_boxes = ocr.extract_text(str(image_path), model)
     # groups text box from same bubble speech into ones
@@ -35,31 +39,43 @@ def image_process(image_path: Path,
     for text in lines:
         # receive list of word objects
         raw_result += text + "\n"
-        result = parser.parse(text, deinflect_rules)
+        result = parser.parse(text, deinflect_rules, dict_set, dict_cur)
         output.extend(result)
 
     output.sort(key=lambda r: r.score, reverse=True)
 
     # load inmages and word into database
-    image_id = load_image(book_id, str(image_path), raw_result, page, c)
+    image_id = load_image(book_id, str(image_path), raw_result, page, main_cur)
     if image_id is not None:
-        add_words_to_DB(output, image_id, c)
+        add_words_to_DB(output, image_id, main_cur)
 
-def load_image(book_id: int, path: str, raw_result: str, page: int, cursor) -> int | None:
-    return add_image(book_id, path, raw_result, page, cursor)
+def load_image(book_id: int, path: str, raw_result: str, page: int, main_cur) -> int | None:
+    return add_image(book_id, path, raw_result, page, main_cur)
 
 
-def import_folder(fld_path, model, rules, cur) -> int:
+def import_folder(fld_path: str, 
+                  model: PaddleOCR, 
+                  rules: list[Rule], 
+                  dict_set: set[str], 
+                  dict_cur, 
+                  main_cur) -> int:
     folder = Path(fld_path)
     IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
     # insert new book into database
-    book_id = add_book(folder.name, fld_path, cur)
+    book_id = add_book(folder.name, fld_path, main_cur)
     page_count = 0
     if book_id is not None:
         # process each images
         for page, file_path in enumerate(sorted(folder.iterdir()), start=1):
             if file_path.is_file() and file_path.suffix.lower() in IMAGE_EXTENSIONS:
-                image_process(file_path, book_id, page, model, rules, cur)
+                image_process(file_path,
+                              book_id,
+                              page, 
+                              model,
+                              rules,
+                              dict_set,
+                              dict_cur,
+                              main_cur)
                 page_count += 1
 
     return page_count

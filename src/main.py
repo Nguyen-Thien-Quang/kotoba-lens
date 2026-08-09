@@ -1,3 +1,4 @@
+from os import close
 import sys
 from gui.image_viewer import ImageViewerApp
 from PySide6.QtWidgets import QApplication
@@ -6,8 +7,6 @@ from app_context import AppContext
 if __name__ == "__main__":
     context = AppContext()
     conn = context.connection
-    rules = context.deinflection_rules
-    model = context.model
 
     app = QApplication(sys.argv)
 
@@ -16,6 +15,9 @@ if __name__ == "__main__":
     try:
         sys.exit(app.exec())
     finally:
-        context.connection.commit()
-        context.connection.close()
-
+        # close main database
+        conn.commit()
+        conn.close()
+        # close dictionary database
+        context.dict_DB_connection.commit()
+        context.dict_DB_connection.close()
